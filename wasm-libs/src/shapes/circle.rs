@@ -3,12 +3,12 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct Circle {
-    radius: i32,
+    radius: f64,
 }
 
 #[wasm_bindgen]
 impl Circle {
-    pub fn new(radius: i32) -> Circle {
+    pub fn new(radius: f64) -> Circle {
         Circle { radius }
     }
 }
@@ -35,7 +35,7 @@ impl MovingCircle {
         self.coordinate.y += self.velocity.dy;
     }
 
-    pub fn get_radius(&self) -> i32 {
+    pub fn get_radius(&self) -> f64 {
         self.circle.radius
     }
 
