@@ -1,48 +1,45 @@
-use crate::canvas::{Coordinate, Velocity};
+use crate::{
+    action::{Move, Velocity},
+    canvas::Draw,
+};
 use wasm_bindgen::prelude::*;
+use web_sys::CanvasRenderingContext2d;
 
 #[wasm_bindgen]
 pub struct Circle {
+    color: String,
     radius: f64,
+    x: f64,
+    y: f64,
 }
 
 #[wasm_bindgen]
 impl Circle {
-    pub fn new(radius: f64) -> Circle {
-        Circle { radius }
+    pub fn new(color: String, radius: f64, x: f64, y: f64) -> Circle {
+        Circle {
+            color,
+            radius,
+            x,
+            y,
+        }
     }
 }
 
-#[wasm_bindgen]
-pub struct MovingCircle {
-    circle: Circle,
-    coordinate: Coordinate,
-    velocity: Velocity,
+impl Move for Circle {
+    fn moving(&mut self, velocity: Velocity) {
+        self.x += velocity.dx;
+        self.y += velocity.dy;
+    }
 }
 
-#[wasm_bindgen]
-impl MovingCircle {
-    pub fn new(coordinate: Coordinate, circle: Circle, velocity: Velocity) -> MovingCircle {
-        MovingCircle {
-            coordinate,
-            circle,
-            velocity,
-        }
-    }
+impl Draw for Circle {
+    fn draw(&self, ctx: &CanvasRenderingContext2d) {
+        ctx.begin_path();
 
-    pub fn moving(&mut self) {
-        self.coordinate.x += self.velocity.dx;
-        self.coordinate.y += self.velocity.dy;
-    }
+        ctx.arc(self.x, self.y, self.radius, 0.0, std::f64::consts::PI * 2.0)
+            .expect("arc failed while drawing a circle.");
 
-    pub fn get_radius(&self) -> f64 {
-        self.circle.radius
-    }
-
-    pub fn get_coordinate(&self) -> Coordinate {
-        Coordinate {
-            x: self.coordinate.x,
-            y: self.coordinate.y,
-        }
+        ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
+        ctx.fill();
     }
 }
