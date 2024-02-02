@@ -28,7 +28,7 @@ const CircleCanvas: React.FunctionComponent<Props> = (props) => {
       );
 
       const animate = () => {
-        context!.clearRect(0, 0, canvas.width, canvas.height);
+        context!.clearRect(0, 0, props.width, props.height);
         circle.moving(new Velocity(Math.random() * 3, Math.random() * 3));
         circle.draw(context!);
         circles.forEach((circle) => {
@@ -40,9 +40,9 @@ const CircleCanvas: React.FunctionComponent<Props> = (props) => {
 
       requestAnimationFrame(animate);
     });
-  }, []);
+  }, [props.height, props.width]);
 
-  return <canvas id='circle-canvas' ref={canvasRef} width={props.width} height={props.height} />;
+  return <canvas id="circle-canvas" ref={canvasRef} width={props.width} height={props.height} />;
 };
 
 export default CircleCanvas;
