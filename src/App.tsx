@@ -3,8 +3,8 @@ import CircleCanvas from './components/CircleCanvas';
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
   return {
-    width,
-    height,
+    width: width - 8,
+    height: height - 8,
   };
 }
 
