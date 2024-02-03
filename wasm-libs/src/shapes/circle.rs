@@ -9,15 +9,14 @@ use web_sys::CanvasRenderingContext2d;
 #[derive(Clone, Debug)]
 pub struct Circle {
     color: String,
+    init_radius: f64,
     radius: f64,
     coordinate: Coordinate,
     boundary: Boundary,
     velocity: Velocity,
 }
 
-#[wasm_bindgen]
 impl Circle {
-    #[wasm_bindgen(constructor)]
     pub fn new(
         color: String,
         radius: f64,
@@ -27,6 +26,7 @@ impl Circle {
     ) -> Circle {
         Circle {
             color,
+            init_radius: radius,
             radius,
             coordinate,
             boundary,
@@ -34,8 +34,7 @@ impl Circle {
         }
     }
 
-    #[wasm_bindgen]
-    pub fn moving(&mut self, mouse_coordinate: Option<Coordinate>) {
+    pub fn moving(&mut self) {
         self.coordinate.x += self.velocity.dx;
         self.coordinate.y += self.velocity.dy;
 
@@ -53,10 +52,11 @@ impl Circle {
         if is_y_coord_hit_boundary {
             self.velocity.dy = self.velocity.dy * -1.0;
         }
+    }
 
+    pub fn mouse_effects(&mut self, mouse_coordinate: Option<Coordinate>) {
         if let Some(coor) = mouse_coordinate {
             let max_radius = 35.0;
-            let original_radius = self.radius;
             let x_distance = coor.x - self.coordinate.x;
             let y_distance = coor.y - self.coordinate.y;
 
@@ -67,22 +67,20 @@ impl Circle {
                 && y_distance > -50.0
             {
                 self.radius += 2.0;
-            } else if (x_distance >= 50.0 && original_radius < self.radius)
-                || (x_distance <= -50.0 && original_radius < self.radius)
-                || (y_distance >= 50.0 && original_radius < self.radius)
-                || (y_distance <= -50.0 && original_radius < self.radius)
+            } else if (x_distance >= 50.0 && self.init_radius < self.radius)
+                || (x_distance <= -50.0 && self.init_radius < self.radius)
+                || (y_distance >= 50.0 && self.init_radius < self.radius)
+                || (y_distance <= -50.0 && self.init_radius < self.radius)
             {
                 self.radius -= 2.0;
             }
         }
     }
 
-    #[wasm_bindgen(setter)]
     pub fn set_velocity(&mut self, velocity: Velocity) {
         self.velocity = velocity;
     }
 
-    #[wasm_bindgen]
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         ctx.begin_path();
 
@@ -97,10 +95,5 @@ impl Circle {
 
         ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
         ctx.fill();
-    }
-
-    #[wasm_bindgen]
-    pub fn get_coordinate(&self) -> Coordinate {
-        self.coordinate.clone()
     }
 }
