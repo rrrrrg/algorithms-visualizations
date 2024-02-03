@@ -83,7 +83,6 @@ impl Circle {
 
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         ctx.begin_path();
-
         ctx.arc(
             self.coordinate.x,
             self.coordinate.y,

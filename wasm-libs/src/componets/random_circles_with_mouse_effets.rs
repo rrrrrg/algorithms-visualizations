@@ -63,7 +63,8 @@ pub fn run_random_circles_with_mouse_effets(document_id: &str, boundary: Boundar
     // mouse_closure.forget();
 
     *g.borrow_mut() = Some(Closure::new(move || {
-        ctx.clear_rect(0.0, 0.0, boundary.width, boundary.height);
+        ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
+        ctx.fill_rect(0.0, 0.0, boundary.width, boundary.height);
 
         for circle in circles.iter_mut() {
             // circle.mouse_effects(Some(mouse_coords.borrow().clone()));
