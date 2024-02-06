@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import init, { Boundary, run_random_circles_with_mouse_effets } from 'wasm-libs';
+import init, { Boundary, run_random_circles_with_mouse_move_effets } from 'wasm-libs';
 
 interface Props {
   width: number;
@@ -8,15 +8,22 @@ interface Props {
 
 const CircleCanvas: React.FunctionComponent<Props> = (props) => {
   useEffect(() => {
+    let ignore = false;
+
     init().then(() => {
-      run_random_circles_with_mouse_effets(
-        'circle-canvas',
-        new Boundary(props.width, props.height)
-      );
+      if (!ignore)
+        run_random_circles_with_mouse_move_effets(
+          'circle-canvas',
+          new Boundary(props.width, props.height)
+        );
     });
+
+    return () => {
+      ignore = true;
+    };
   }, [props.height, props.width]);
 
-  return <canvas id='circle-canvas' width={props.width} height={props.height} />;
+  return <canvas id="circle-canvas" width={props.width} height={props.height} />;
 };
 
 export default CircleCanvas;

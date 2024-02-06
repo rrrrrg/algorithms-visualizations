@@ -54,7 +54,7 @@ impl Circle {
         }
     }
 
-    pub fn mouse_effects(&mut self, mouse_coordinate: &Coordinate) {
+    pub fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate) {
         let max_radius = 35.0;
         let x_distance = mouse_coordinate.x - self.coordinate.x;
         let y_distance = mouse_coordinate.y - self.coordinate.y;
@@ -65,13 +65,13 @@ impl Circle {
             && y_distance < 50.0
             && y_distance > -50.0
         {
-            self.radius += 1.0;
+            self.radius += 2.0;
         } else if (x_distance >= 50.0 && self.init_radius < self.radius)
             || (x_distance <= -50.0 && self.init_radius < self.radius)
             || (y_distance >= 50.0 && self.init_radius < self.radius)
             || (y_distance <= -50.0 && self.init_radius < self.radius)
         {
-            self.radius -= 1.0;
+            self.radius -= 2.0;
         }
     }
 
