@@ -23,3 +23,7 @@ impl Velocity {
         Velocity { dx, dy }
     }
 }
+
+pub trait SetVelocity {
+    fn set_velocity(&mut self, velocity: Velocity);
+}

@@ -5,8 +5,8 @@ use wasm_bindgen::prelude::*;
 use web_sys::MouseEvent;
 
 use crate::{
-    action::Velocity,
-    canvas::{self, request_animation_frame, Boundary, Coordinate},
+    action::{SetVelocity, Velocity},
+    canvas::{self, request_animation_frame, Boundary, Coordinate, Drawable, MouseMoveEffects},
     shapes::circle::Circle,
     utils::set_panic_hook,
 };

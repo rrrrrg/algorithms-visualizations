@@ -1,6 +1,6 @@
 use crate::{
-    action::Velocity,
-    canvas::{Boundary, Coordinate},
+    action::{SetVelocity, Velocity},
+    canvas::{Boundary, Coordinate, Drawable, MouseMoveEffects},
 };
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
@@ -53,8 +53,10 @@ impl Circle {
             self.velocity.dy = self.velocity.dy * -1.0;
         }
     }
+}
 
-    pub fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate) {
+impl MouseMoveEffects for Circle {
+    fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate) {
         let max_radius = 35.0;
         let x_distance = mouse_coordinate.x - self.coordinate.x;
         let y_distance = mouse_coordinate.y - self.coordinate.y;
@@ -74,12 +76,10 @@ impl Circle {
             self.radius -= 2.0;
         }
     }
+}
 
-    pub fn set_velocity(&mut self, velocity: Velocity) {
-        self.velocity = velocity;
-    }
-
-    pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
+impl Drawable for Circle {
+    fn draw(&self, ctx: &CanvasRenderingContext2d) {
         ctx.begin_path();
 
         if let Ok(_) = ctx.arc(
@@ -92,5 +92,11 @@ impl Circle {
             ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
             ctx.fill();
         }
+    }
+}
+
+impl SetVelocity for Circle {
+    fn set_velocity(&mut self, velocity: Velocity) {
+        self.velocity = velocity;
     }
 }

@@ -50,3 +50,11 @@ pub fn request_animation_frame(cb: &Closure<dyn FnMut()>) {
         .request_animation_frame(cb.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
 }
+
+pub trait Drawable {
+    fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d);
+}
+
+pub trait MouseMoveEffects {
+    fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate);
+}
