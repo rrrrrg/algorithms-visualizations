@@ -54,26 +54,24 @@ impl Circle {
         }
     }
 
-    pub fn mouse_effects(&mut self, mouse_coordinate: Option<Coordinate>) {
-        if let Some(coor) = mouse_coordinate {
-            let max_radius = 35.0;
-            let x_distance = coor.x - self.coordinate.x;
-            let y_distance = coor.y - self.coordinate.y;
+    pub fn mouse_effects(&mut self, mouse_coordinate: &Coordinate) {
+        let max_radius = 35.0;
+        let x_distance = mouse_coordinate.x - self.coordinate.x;
+        let y_distance = mouse_coordinate.y - self.coordinate.y;
 
-            if x_distance < 50.0
-                && x_distance > -50.0
-                && self.radius < max_radius
-                && y_distance < 50.0
-                && y_distance > -50.0
-            {
-                self.radius += 2.0;
-            } else if (x_distance >= 50.0 && self.init_radius < self.radius)
-                || (x_distance <= -50.0 && self.init_radius < self.radius)
-                || (y_distance >= 50.0 && self.init_radius < self.radius)
-                || (y_distance <= -50.0 && self.init_radius < self.radius)
-            {
-                self.radius -= 2.0;
-            }
+        if x_distance < 50.0
+            && x_distance > -50.0
+            && self.radius < max_radius
+            && y_distance < 50.0
+            && y_distance > -50.0
+        {
+            self.radius += 1.0;
+        } else if (x_distance >= 50.0 && self.init_radius < self.radius)
+            || (x_distance <= -50.0 && self.init_radius < self.radius)
+            || (y_distance >= 50.0 && self.init_radius < self.radius)
+            || (y_distance <= -50.0 && self.init_radius < self.radius)
+        {
+            self.radius -= 1.0;
         }
     }
 
@@ -83,16 +81,16 @@ impl Circle {
 
     pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
         ctx.begin_path();
-        ctx.arc(
+
+        if let Ok(_) = ctx.arc(
             self.coordinate.x,
             self.coordinate.y,
             self.radius,
             0.0,
             std::f64::consts::PI * 2.0,
-        )
-        .expect("arc failed while drawing a circle.");
-
-        ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
-        ctx.fill();
+        ) {
+            ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
+            ctx.fill();
+        }
     }
 }
