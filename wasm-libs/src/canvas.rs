@@ -55,6 +55,10 @@ pub trait Drawable {
     fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d);
 }
 
-pub trait MouseMoveEffects {
-    fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate);
+pub trait MouseMoveEffects<T> {
+    fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate) -> T;
+}
+
+pub trait MouseDownEffects<T> {
+    fn mouse_down_effects(&mut self, mouse_coordinate: &Coordinate) -> T;
 }

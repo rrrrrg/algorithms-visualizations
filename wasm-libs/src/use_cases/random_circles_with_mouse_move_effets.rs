@@ -6,7 +6,10 @@ use web_sys::MouseEvent;
 
 use crate::{
     action::{SetVelocity, Velocity},
-    canvas::{self, request_animation_frame, Boundary, Coordinate, Drawable, MouseMoveEffects},
+    canvas::{
+        self, request_animation_frame, Boundary, Coordinate, Drawable, MouseDownEffects,
+        MouseMoveEffects,
+    },
     shapes::circle::Circle,
     utils::set_panic_hook,
 };
@@ -59,16 +62,16 @@ pub fn run_random_circles_with_mouse_move_effets(
 
     log(&format!("{}", circles.len()));
 
-    let mouse_coords = Rc::new(RefCell::new(Coordinate { x: 0.0, y: 0.0 }));
+    let mouse_move_coords = Rc::new(RefCell::new(Coordinate { x: 0.0, y: 0.0 }));
 
     {
-        let mouse_coords_clone = mouse_coords.clone();
+        let mouse_move_coords_clone = mouse_move_coords.clone();
 
         let mouse_closure = Closure::<dyn FnMut(_)>::new(move |event: MouseEvent| {
             let x = event.offset_x() as f64;
             let y = event.offset_y() as f64;
 
-            *mouse_coords_clone.borrow_mut() = Coordinate { x, y };
+            *mouse_move_coords_clone.borrow_mut() = Coordinate { x, y };
         });
 
         let _ = canvas
@@ -77,17 +80,47 @@ pub fn run_random_circles_with_mouse_move_effets(
         mouse_closure.forget();
     }
 
+    let mouse_down_coords = Rc::new(RefCell::new(Coordinate { x: 0.0, y: 0.0 }));
+
+    {
+        let mouse_down_coords_clone = mouse_down_coords.clone();
+
+        let mouse_closure = Closure::<dyn FnMut(_)>::new(move |event: MouseEvent| {
+            let x = event.offset_x() as f64;
+            let y = event.offset_y() as f64;
+
+            *mouse_down_coords_clone.borrow_mut() = Coordinate { x, y };
+        });
+
+        let _ = canvas
+            .add_event_listener_with_callback("mousedown", mouse_closure.as_ref().unchecked_ref());
+
+        mouse_closure.forget();
+    }
+
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
+
+    let mut particles: Vec<Circle> = vec![];
 
     *g.borrow_mut() = Some(Closure::new(move || {
         ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
         ctx.fill_rect(0.0, 0.0, boundary.width, boundary.height);
 
         for circle in circles.iter_mut() {
-            circle.mouse_move_effects(&mouse_coords.borrow());
+            circle.mouse_move_effects(&mouse_move_coords.borrow());
+
+            if let Some(p) = circle.mouse_down_effects(&mouse_down_coords.borrow()) {
+                particles.extend(p);
+            }
             circle.moving();
             circle.draw(&ctx);
+        }
+        if particles.len() > 0 {
+            for particle in particles.iter_mut() {
+                particle.moving();
+                particle.draw(&ctx);
+            }
         }
 
         request_animation_frame(f.borrow().as_ref().unwrap());
