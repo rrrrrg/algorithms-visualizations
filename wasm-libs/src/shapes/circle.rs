@@ -5,7 +5,6 @@ use crate::{
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
-#[wasm_bindgen]
 #[derive(Clone, Debug)]
 pub struct Circle {
     color: String,
