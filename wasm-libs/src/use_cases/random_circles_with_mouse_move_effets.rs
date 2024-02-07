@@ -18,7 +18,11 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn run_random_circles_with_mouse_move_effets(document_id: &str, boundary: Boundary) {
+pub fn run_random_circles_with_mouse_move_effets(
+    document_id: &str,
+    boundary: Boundary,
+    num_of_circles: i32,
+) {
     set_panic_hook();
 
     let colors = vec!["#F9EFDB", "#EBD9B4", "#9DBC98", "#638889"];
@@ -34,7 +38,7 @@ pub fn run_random_circles_with_mouse_move_effets(document_id: &str, boundary: Bo
 
     let mut circles: Vec<Circle> = vec![];
 
-    for _ in 0..100 {
+    for _ in 0..num_of_circles {
         let radius = random() * 30.0;
         let x = random() * boundary.width;
         let y = random() * boundary.height;

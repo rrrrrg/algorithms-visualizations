@@ -14,7 +14,8 @@ const CircleCanvas: React.FunctionComponent<Props> = (props) => {
       if (!ignore)
         run_random_circles_with_mouse_move_effets(
           'circle-canvas',
-          new Boundary(props.width, props.height)
+          new Boundary(props.width, props.height),
+          100
         );
     });
 
