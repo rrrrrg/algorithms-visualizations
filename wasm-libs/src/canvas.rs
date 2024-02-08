@@ -45,10 +45,10 @@ pub fn canvas(element_id: &str) -> web_sys::HtmlCanvasElement {
         .unwrap()
 }
 
-pub fn request_animation_frame(cb: &Closure<dyn FnMut()>) {
+pub fn request_animation_frame(cb: &Closure<dyn FnMut()>) -> i32 {
     window()
         .request_animation_frame(cb.as_ref().unchecked_ref())
-        .expect("should register `requestAnimationFrame` OK");
+        .expect("should register `requestAnimationFrame` OK")
 }
 
 pub trait Drawable {

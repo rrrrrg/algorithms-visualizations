@@ -25,6 +25,7 @@ pub fn run_random_circles_with_mouse_move_effets(
     document_id: &str,
     boundary: Boundary,
     num_of_circles: i32,
+    max_radius: f64,
 ) {
     set_panic_hook();
 
@@ -42,7 +43,7 @@ pub fn run_random_circles_with_mouse_move_effets(
     let mut circles: Vec<Circle> = vec![];
 
     for _ in 0..num_of_circles {
-        let radius = random() * 30.0;
+        let radius = random() * max_radius;
         let x = random() * boundary.width;
         let y = random() * boundary.height;
         let color = colors[(random() * 4.0) as usize];
@@ -80,7 +81,7 @@ pub fn run_random_circles_with_mouse_move_effets(
         mouse_closure.forget();
     }
 
-    let mouse_down_coords = Rc::new(RefCell::new(Coordinate { x: 0.0, y: 0.0 }));
+    let mouse_down_coords = Rc::new(RefCell::new(None));
 
     {
         let mouse_down_coords_clone = mouse_down_coords.clone();
@@ -89,7 +90,7 @@ pub fn run_random_circles_with_mouse_move_effets(
             let x = event.offset_x() as f64;
             let y = event.offset_y() as f64;
 
-            *mouse_down_coords_clone.borrow_mut() = Coordinate { x, y };
+            *mouse_down_coords_clone.borrow_mut() = Some(Coordinate { x, y });
         });
 
         let _ = canvas
@@ -98,30 +99,59 @@ pub fn run_random_circles_with_mouse_move_effets(
         mouse_closure.forget();
     }
 
+    {
+        let mouse_down_coords_clone = mouse_down_coords.clone();
+
+        let mouse_closure = Closure::<dyn FnMut(_)>::new(move |_: MouseEvent| {
+            *mouse_down_coords_clone.borrow_mut() = None;
+        });
+
+        let _ = canvas
+            .add_event_listener_with_callback("mouseup", mouse_closure.as_ref().unchecked_ref());
+
+        mouse_closure.forget();
+    }
+
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
+
+    let mut split_circle: Vec<Circle> = vec![];
 
     let mut particles: Vec<Circle> = vec![];
 
     *g.borrow_mut() = Some(Closure::new(move || {
-        ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
+        // ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
+        ctx.set_fill_style(&JsValue::from_str("white"));
         ctx.fill_rect(0.0, 0.0, boundary.width, boundary.height);
 
         for circle in circles.iter_mut() {
-            circle.mouse_move_effects(&mouse_move_coords.borrow());
+            let splited_circles = circle.mouse_move_effects(&mouse_move_coords.borrow());
 
-            if let Some(p) = circle.mouse_down_effects(&mouse_down_coords.borrow()) {
-                particles.extend(p);
+            if let Some(splited_circles) = splited_circles {
+                split_circle.extend(splited_circles);
             }
+
+            if let Some(mouse_down_coords) = mouse_down_coords.borrow().as_ref() {
+                if let Some(p) = circle.mouse_down_effects(&mouse_down_coords) {
+                    particles.extend(p);
+                }
+            }
+
             circle.moving();
             circle.draw(&ctx);
         }
-        if particles.len() > 0 {
-            for particle in particles.iter_mut() {
-                particle.moving();
-                particle.draw(&ctx);
-            }
+
+        circles.extend(split_circle.drain(..));
+
+        circles.retain(|circle| circle.get_init_radius() > 1.0);
+
+        for particle in particles.iter_mut() {
+            particle.moving();
+            particle.fade_out();
+            particle.draw(&ctx);
         }
+
+        particles.retain(|particle| !particle.is_faded_out());
 
         request_animation_frame(f.borrow().as_ref().unwrap());
     }));

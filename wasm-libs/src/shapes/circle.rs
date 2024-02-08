@@ -1,5 +1,3 @@
-use std::clone;
-
 use crate::{
     action::{SetVelocity, Velocity},
     canvas::{Boundary, Coordinate, Drawable, MouseDownEffects, MouseMoveEffects},
@@ -15,6 +13,8 @@ pub struct Circle {
     coordinate: Coordinate,
     boundary: Boundary,
     velocity: Velocity,
+    splited: bool,
+    opacity: f64,
 }
 
 impl Circle {
@@ -32,6 +32,8 @@ impl Circle {
             coordinate,
             boundary,
             velocity: velocity.unwrap_or(Velocity { dx: 0.0, dy: 0.0 }),
+            splited: false,
+            opacity: 1.0,
         }
     }
 
@@ -55,17 +57,21 @@ impl Circle {
         }
     }
 
-    pub fn split_circle(&self) -> Vec<Circle> {
-        let new_radius = self.radius / 2.0;
+    pub fn split_circle(&mut self) -> Option<Vec<Circle>> {
+        if self.splited {
+            return None;
+        }
 
-        let new_velocity = self.velocity.clone();
+        self.splited = true;
+
+        let new_radius = self.radius / 2.0;
 
         let circle1 = Circle::new(
             self.color.clone(),
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(new_velocity.clone()),
+            Some(Velocity::get_random_velocity(None)),
         );
 
         let circle2 = Circle::new(
@@ -73,12 +79,12 @@ impl Circle {
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(new_velocity),
+            Some(Velocity::get_random_velocity(None)),
         );
-        vec![circle1, circle2]
+        Some(vec![circle1, circle2])
     }
 
-    pub fn blast_particles(&mut self) -> Vec<Circle> {
+    pub fn blast_particles(&mut self, num_of_particles: u16) -> Vec<Circle> {
         if self.init_radius <= 1.0 {
             return vec![];
         }
@@ -94,22 +100,40 @@ impl Circle {
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(Velocity::get_random_velocity(None)),
+            Some(Velocity::get_random_velocity(Some(Velocity {
+                dx: 5.0,
+                dy: 5.0,
+            }))),
         );
 
-        for _ in 0..5 {
+        for _ in 0..num_of_particles {
             let mut new_particle = particle.clone();
-            new_particle.set_velocity(Velocity::get_random_velocity(None));
+            new_particle.set_velocity(Velocity::get_random_velocity(Some(Velocity {
+                dx: 5.0,
+                dy: 5.0,
+            })));
             particles.push(new_particle);
         }
 
         particles
     }
+
+    pub fn fade_out(&mut self) {
+        self.opacity -= 0.02;
+    }
+
+    pub fn is_faded_out(&self) -> bool {
+        self.opacity <= 0.0
+    }
+
+    pub fn get_init_radius(&self) -> f64 {
+        self.init_radius
+    }
 }
 
 impl MouseMoveEffects<Option<Vec<Circle>>> for Circle {
     fn mouse_move_effects(&mut self, mouse_coordinate: &Coordinate) -> Option<Vec<Circle>> {
-        let max_radius = 50.0;
+        let max_radius = 100.0;
         let x_distance = mouse_coordinate.x - self.coordinate.x;
         let y_distance = mouse_coordinate.y - self.coordinate.y;
 
@@ -119,7 +143,7 @@ impl MouseMoveEffects<Option<Vec<Circle>>> for Circle {
             && y_distance < 50.0
             && y_distance > -50.0
         {
-            self.radius += 2.0;
+            self.radius += 0.5;
         } else if (x_distance >= 50.0 && self.init_radius < self.radius)
             || (x_distance <= -50.0 && self.init_radius < self.radius)
             || (y_distance >= 50.0 && self.init_radius < self.radius)
@@ -129,7 +153,7 @@ impl MouseMoveEffects<Option<Vec<Circle>>> for Circle {
         }
 
         if self.radius >= max_radius {
-            return Some(self.split_circle());
+            return self.split_circle();
         } else {
             return None;
         }
@@ -142,7 +166,7 @@ impl MouseDownEffects<Option<Vec<Circle>>> for Circle {
         let y_distance = mouse_coordinate.y - self.coordinate.y;
 
         if x_distance < 50.0 && x_distance > -50.0 && y_distance < 50.0 && y_distance > -50.0 {
-            return Some(self.blast_particles());
+            return Some(self.blast_particles(10));
         }
 
         None
@@ -151,6 +175,8 @@ impl MouseDownEffects<Option<Vec<Circle>>> for Circle {
 
 impl Drawable for Circle {
     fn draw(&self, ctx: &CanvasRenderingContext2d) {
+        ctx.save();
+        ctx.set_global_alpha(self.opacity);
         ctx.begin_path();
 
         if let Ok(_) = ctx.arc(
@@ -162,6 +188,7 @@ impl Drawable for Circle {
         ) {
             ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
             ctx.fill();
+            ctx.restore();
         }
     }
 }
