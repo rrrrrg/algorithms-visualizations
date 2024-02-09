@@ -71,7 +71,7 @@ impl Circle {
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(Velocity::get_random_velocity(None)),
+            Some(Velocity::get_random_velocity(2.0)),
         );
 
         let circle2 = Circle::new(
@@ -79,7 +79,7 @@ impl Circle {
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(Velocity::get_random_velocity(None)),
+            Some(Velocity::get_random_velocity(2.0)),
         );
         Some(vec![circle1, circle2])
     }
@@ -100,18 +100,12 @@ impl Circle {
             new_radius,
             self.coordinate.clone(),
             self.boundary.clone(),
-            Some(Velocity::get_random_velocity(Some(Velocity {
-                dx: 5.0,
-                dy: 5.0,
-            }))),
+            Some(Velocity::get_random_velocity(5.0)),
         );
 
         for _ in 0..num_of_particles {
             let mut new_particle = particle.clone();
-            new_particle.set_velocity(Velocity::get_random_velocity(Some(Velocity {
-                dx: 5.0,
-                dy: 5.0,
-            })));
+            new_particle.set_velocity(Velocity::get_random_velocity(5.0));
             particles.push(new_particle);
         }
 
@@ -175,7 +169,6 @@ impl MouseDownEffects<Option<Vec<Circle>>> for Circle {
 
 impl Drawable for Circle {
     fn draw(&self, ctx: &CanvasRenderingContext2d) {
-        ctx.save();
         ctx.set_global_alpha(self.opacity);
         ctx.begin_path();
 
@@ -188,7 +181,6 @@ impl Drawable for Circle {
         ) {
             ctx.set_fill_style(&JsValue::from_str(self.color.as_str()));
             ctx.fill();
-            ctx.restore();
         }
     }
 }
