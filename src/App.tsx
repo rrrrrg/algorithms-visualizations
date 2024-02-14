@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import CircleCanvas from './components/CircleCanvas';
+import SquareCanvas from './components/SquareCanvas';
+
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
   return {
@@ -20,7 +21,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return <CircleCanvas width={windowDimensions.width} height={windowDimensions.height} />;
+  return <SquareCanvas width={windowDimensions.width} height={windowDimensions.height} />;
 }
 
 export default App;
