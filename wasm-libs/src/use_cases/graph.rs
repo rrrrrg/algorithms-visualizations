@@ -28,7 +28,7 @@ impl Graph {
         let width = 64;
         let height = 64;
 
-        let nodes = (0..width * height).map(|i| Node::Available).collect();
+        let nodes = (0..width * height).map(|_i| Node::Available).collect();
 
         Graph {
             width,
