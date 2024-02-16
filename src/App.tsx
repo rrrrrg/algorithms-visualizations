@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import SquareCanvas from './components/SquareCanvas';
+import GraphCanvas from './components/GraphCanvas';
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
@@ -21,7 +21,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return <SquareCanvas width={windowDimensions.width} height={windowDimensions.height} />;
+  return <GraphCanvas width={windowDimensions.width} height={windowDimensions.height} />;
 }
 
 export default App;
