@@ -15,7 +15,7 @@ const GraphCanvas: React.FunctionComponent<Props> = (props) => {
         return;
       }
 
-      run_graph('graph-canvas');
+      run_graph('graph-canvas', props.width, props.height);
     });
 
     return () => {
@@ -23,7 +23,7 @@ const GraphCanvas: React.FunctionComponent<Props> = (props) => {
     };
   }, [props.height, props.width]);
 
-  return <canvas id='graph-canvas' width={props.width} height={props.height} />;
+  return <canvas id="graph-canvas" width={props.width} height={props.height} />;
 };
 
 export default GraphCanvas;

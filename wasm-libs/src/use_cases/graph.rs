@@ -1,20 +1,20 @@
-use std::{cell::RefCell, fmt, rc::Rc};
+use std::collections::VecDeque;
+use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::*;
 
-use crate::canvas::{self, request_animation_frame, Drawable};
+use crate::canvas::{self, request_animation_frame};
 
-const NODE_SIZE: f64 = 20.0;
+const NODE_SIZE: f64 = 30.0;
 const GRID_COLOR: &str = "#CCCCCC";
-const PATH_COLOR: &str = "#FFFFFF";
-const AVAILABLE_COLOR: &str = "#000000";
-const WALL_COLOR: &str = "#FF0000";
+const PATH_COLOR: &str = "#7BD3EA";
+const AVAILABLE_COLOR: &str = "#FFFFFF";
+const WALL_COLOR: &str = "#000000";
 const START_COLOR: &str = "#00FF00";
 const END_COLOR: &str = "#0000FF";
 
-#[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
-pub enum Node {
+pub enum Type {
     Start,
     End,
     Wall,
@@ -22,23 +22,51 @@ pub enum Node {
     Available,
 }
 
-#[wasm_bindgen]
+#[derive(Clone, Debug)]
+pub struct Node {
+    node_type: Type,
+    is_visited: bool,
+}
+
+impl Node {
+    pub fn new(node_type: Type) -> Node {
+        Node {
+            node_type,
+            is_visited: false,
+        }
+    }
+
+    pub fn node_type(&self) -> Type {
+        self.node_type
+    }
+
+    pub fn is_visited(&self) -> bool {
+        self.is_visited
+    }
+
+    pub fn set_visited(&mut self) {
+        self.is_visited = true;
+    }
+
+    pub fn set_node_type(&mut self, node_type: Type) {
+        self.node_type = node_type;
+    }
+}
+
 pub struct Graph {
     width: u32,
     height: u32,
     nodes: Vec<Node>,
     start_node_index: Option<usize>,
     end_node_indexd: Option<usize>,
+    queue: VecDeque<usize>,
 }
 
-#[wasm_bindgen]
 impl Graph {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Graph {
-        let width = 64;
-        let height = 64;
-
-        let nodes = (0..width * height).map(|_i| Node::Available).collect();
+    pub fn new(width: u32, height: u32) -> Graph {
+        let nodes = (0..width * height)
+            .map(|_| Node::new(Type::Available))
+            .collect();
 
         Graph {
             width,
@@ -46,11 +74,8 @@ impl Graph {
             nodes,
             start_node_index: None,
             end_node_indexd: None,
+            queue: VecDeque::new(),
         }
-    }
-
-    pub fn render(&self) -> String {
-        self.to_string()
     }
 
     pub fn width(&self) -> u32 {
@@ -79,7 +104,7 @@ impl Graph {
                 let neighbor_row = (row + delta_row) % self.height;
                 let neighbor_col = (column + delta_col) % self.width;
                 let idx = self.get_index(neighbor_row, neighbor_col);
-                if self.nodes[idx] == Node::Available {
+                if self.nodes[idx].node_type() == Type::Available {
                     indexes.push(idx);
                 }
             }
@@ -87,63 +112,53 @@ impl Graph {
         indexes
     }
 
-    fn set_path_node(&mut self, row: u32, column: u32) {
-        let idx = self.get_index(row, column);
-        self.nodes[idx] = Node::Path;
-    }
-
     pub fn set_start_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
         self.start_node_index = Some(idx);
-        self.nodes[idx] = Node::Start;
+        self.nodes[idx].set_node_type(Type::Start);
+        self.queue.push_back(idx)
     }
 
     pub fn set_end_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
         self.end_node_indexd = Some(idx);
-        self.nodes[idx] = Node::End;
+        self.nodes[idx].set_node_type(Type::End);
     }
 
     pub fn set_wall_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
-        self.nodes[idx] = Node::Wall;
+        self.nodes[idx].set_node_type(Type::Wall);
     }
 
     pub fn bfs(&mut self) {
-        let start_node_index = self.start_node_index.unwrap();
-        let end_node_index = self.end_node_indexd.unwrap();
-
-        let mut queue = Vec::new();
-        queue.push(start_node_index);
-
-        let mut came_from = vec![None; self.width as usize * self.height as usize];
-        came_from[start_node_index] = Some(start_node_index);
-
-        while !queue.is_empty() {
-            let current = queue.remove(0);
-            if current == end_node_index {
-                break;
-            }
-
-            let current_row = current / self.width as usize;
-            let current_col = current % self.width as usize;
-
-            for neighbor in
-                self.get_available_neighbor_indexes(current_row as u32, current_col as u32)
-            {
-                if came_from[neighbor].is_none() {
-                    queue.push(neighbor);
-                    came_from[neighbor] = Some(current);
-                }
-            }
+        if self.queue.is_empty() {
+            return;
         }
 
-        let mut current = end_node_index;
-        while current != start_node_index {
-            let current_row = current / self.width as usize;
-            let current_col = current % self.width as usize;
-            self.set_path_node(current_row as u32, current_col as u32);
-            current = came_from[current].unwrap();
+        let current = self.queue.pop_front().unwrap();
+
+        let node = &self.nodes[current];
+
+        if node.node_type() == Type::End {
+            return;
+        }
+
+        let (row, column) = (current as u32 / self.width, current as u32 % self.width);
+
+        let neighbors = self.get_available_neighbor_indexes(row, column);
+
+        for neighbor in neighbors {
+            if self.nodes[neighbor].is_visited() {
+                continue;
+            }
+            self.nodes[neighbor].set_visited();
+
+            if self.nodes[neighbor].node_type() == Type::Wall {
+                continue;
+            }
+
+            self.nodes[neighbor].set_node_type(Type::Path);
+            self.queue.push_back(neighbor);
         }
     }
 
@@ -186,15 +201,15 @@ impl Graph {
                 let x = column as f64 * (NODE_SIZE + 1.0) + 1.0;
                 let y = row as f64 * (NODE_SIZE + 1.0) + 1.0;
 
-                if nodes[index as usize] == Node::Available {
+                if nodes[index as usize].node_type() == Type::Available {
                     ctx.set_fill_style(&AVAILABLE_COLOR.into());
-                } else if nodes[index as usize] == Node::Path {
+                } else if nodes[index as usize].node_type() == Type::Path {
                     ctx.set_fill_style(&PATH_COLOR.into());
-                } else if nodes[index as usize] == Node::Start {
+                } else if nodes[index as usize].node_type() == Type::Start {
                     ctx.set_fill_style(&START_COLOR.into());
-                } else if nodes[index as usize] == Node::End {
+                } else if nodes[index as usize].node_type() == Type::End {
                     ctx.set_fill_style(&END_COLOR.into());
-                } else if nodes[index as usize] == Node::Wall {
+                } else if nodes[index as usize].node_type() == Type::Wall {
                     ctx.set_fill_style(&WALL_COLOR.into());
                 }
 
@@ -206,34 +221,8 @@ impl Graph {
     }
 }
 
-impl fmt::Display for Graph {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for line in self.nodes.as_slice().chunks(self.width as usize) {
-            for &node in line {
-                let symbol = match node {
-                    Node::Start => "▶",
-                    Node::End => "⏺",
-                    Node::Wall => "✖️",
-                    Node::Path => "◼",
-                    Node::Available => "◻",
-                };
-                write!(f, "{}", symbol)?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
-}
-
-impl Drawable for Graph {
-    fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d) {
-        self.draw_grid(ctx);
-        self.draw_node(ctx);
-    }
-}
-
 #[wasm_bindgen]
-pub fn run_graph(document_id: &str) {
+pub fn run_graph(document_id: &str, width: u32, height: u32) {
     let canvas = canvas::canvas(document_id);
 
     let ctx = canvas
@@ -243,23 +232,27 @@ pub fn run_graph(document_id: &str) {
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
 
-    let mut graph = Graph::new();
+    let mut graph = Graph::new(width, height);
 
     graph.set_start_node(0, 0);
     graph.set_end_node(20, 20);
-    graph.set_wall_node(10, 10);
-    graph.set_wall_node(10, 11);
-    graph.set_wall_node(10, 12);
-    graph.set_wall_node(10, 13);
-    graph.set_wall_node(10, 14);
-    graph.set_wall_node(10, 15);
+    graph.set_wall_node(5, 10);
+    graph.set_wall_node(5, 11);
+    graph.set_wall_node(5, 12);
+    graph.set_wall_node(5, 13);
+    graph.set_wall_node(5, 14);
+    graph.set_wall_node(5, 15);
+
+    graph.draw_grid(&ctx);
+    graph.draw_node(&ctx);
 
     let f = Rc::new(RefCell::new(None));
     let g = f.clone();
 
     *g.borrow_mut() = Some(Closure::new(move || {
-        // graph.bfs();
-        graph.draw(&ctx);
+        graph.bfs();
+        graph.draw_node(&ctx);
+
         request_animation_frame(f.borrow().as_ref().unwrap());
     }));
 
