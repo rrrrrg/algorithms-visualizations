@@ -1,5 +1,15 @@
-use std::fmt;
+use std::{cell::RefCell, fmt, rc::Rc};
 use wasm_bindgen::prelude::*;
+
+use crate::canvas::{self, request_animation_frame, Drawable};
+
+const NODE_SIZE: f64 = 20.0;
+const GRID_COLOR: &str = "#CCCCCC";
+const PATH_COLOR: &str = "#FFFFFF";
+const AVAILABLE_COLOR: &str = "#000000";
+const WALL_COLOR: &str = "#FF0000";
+const START_COLOR: &str = "#00FF00";
+const END_COLOR: &str = "#0000FF";
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -136,6 +146,64 @@ impl Graph {
             current = came_from[current].unwrap();
         }
     }
+
+    pub fn draw_grid(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+        ctx.begin_path();
+        ctx.set_stroke_style(&GRID_COLOR.into());
+
+        // Vertical lines.
+        for i in 0..self.width {
+            ctx.move_to(i as f64 * (NODE_SIZE + 1.0) + 1.0, 0.0);
+            ctx.line_to(
+                i as f64 * (NODE_SIZE + 1.0) + 1.0,
+                (NODE_SIZE + 1.0) * self.height as f64 + 1.0,
+            );
+        }
+
+        // Horizontal lines.
+        for j in 0..self.height {
+            ctx.move_to(0.0, j as f64 * (NODE_SIZE + 1.0) + 1.0);
+            ctx.line_to(
+                (NODE_SIZE + 1.0) * self.width as f64 + 1.0,
+                j as f64 * (NODE_SIZE + 1.0) + 1.0,
+            );
+        }
+
+        ctx.stroke();
+    }
+
+    pub fn draw_node(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+        let nodes_ptr = self.nodes();
+
+        let nodes =
+            unsafe { std::slice::from_raw_parts(nodes_ptr, (self.width * self.height) as usize) };
+
+        ctx.begin_path();
+
+        for row in 0..self.height {
+            for column in 0..self.width {
+                let index = self.get_index(row, column);
+                let x = column as f64 * (NODE_SIZE + 1.0) + 1.0;
+                let y = row as f64 * (NODE_SIZE + 1.0) + 1.0;
+
+                if nodes[index as usize] == Node::Available {
+                    ctx.set_fill_style(&AVAILABLE_COLOR.into());
+                } else if nodes[index as usize] == Node::Path {
+                    ctx.set_fill_style(&PATH_COLOR.into());
+                } else if nodes[index as usize] == Node::Start {
+                    ctx.set_fill_style(&START_COLOR.into());
+                } else if nodes[index as usize] == Node::End {
+                    ctx.set_fill_style(&END_COLOR.into());
+                } else if nodes[index as usize] == Node::Wall {
+                    ctx.set_fill_style(&WALL_COLOR.into());
+                }
+
+                ctx.fill_rect(x, y, NODE_SIZE, NODE_SIZE);
+            }
+        }
+
+        ctx.stroke();
+    }
 }
 
 impl fmt::Display for Graph {
@@ -155,4 +223,45 @@ impl fmt::Display for Graph {
         }
         Ok(())
     }
+}
+
+impl Drawable for Graph {
+    fn draw(&self, ctx: &web_sys::CanvasRenderingContext2d) {
+        self.draw_grid(ctx);
+        self.draw_node(ctx);
+    }
+}
+
+#[wasm_bindgen]
+pub fn run_graph(document_id: &str) {
+    let canvas = canvas::canvas(document_id);
+
+    let ctx = canvas
+        .get_context("2d")
+        .unwrap()
+        .unwrap()
+        .dyn_into::<web_sys::CanvasRenderingContext2d>()
+        .unwrap();
+
+    let mut graph = Graph::new();
+
+    graph.set_start_node(0, 0);
+    graph.set_end_node(20, 20);
+    graph.set_wall_node(10, 10);
+    graph.set_wall_node(10, 11);
+    graph.set_wall_node(10, 12);
+    graph.set_wall_node(10, 13);
+    graph.set_wall_node(10, 14);
+    graph.set_wall_node(10, 15);
+
+    let f = Rc::new(RefCell::new(None));
+    let g = f.clone();
+
+    *g.borrow_mut() = Some(Closure::new(move || {
+        // graph.bfs();
+        graph.draw(&ctx);
+        request_animation_frame(f.borrow().as_ref().unwrap());
+    }));
+
+    request_animation_frame(g.borrow().as_ref().unwrap());
 }
