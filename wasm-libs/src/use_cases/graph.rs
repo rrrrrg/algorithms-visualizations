@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::canvas::{self, request_animation_frame};
 
-const NODE_SIZE: f64 = 30.0;
+const NODE_SIZE: f64 = 20.0;
 const GRID_COLOR: &str = "#CCCCCC";
 const PATH_COLOR: &str = "#7BD3EA";
 const AVAILABLE_COLOR: &str = "#FFFFFF";
@@ -67,7 +67,7 @@ pub struct Graph {
     height: u32,
     nodes: Vec<Node>,
     start_node_index: Option<usize>,
-    end_node_indexd: Option<usize>,
+    end_node_index: Option<usize>,
     queue: VecDeque<usize>,
 }
 
@@ -82,7 +82,7 @@ impl Graph {
             height,
             nodes,
             start_node_index: None,
-            end_node_indexd: None,
+            end_node_index: None,
             queue: VecDeque::new(),
         }
     }
@@ -103,7 +103,7 @@ impl Graph {
         (row * self.width + column) as usize
     }
 
-    fn get_available_neighbor_indexes(&self, row: u32, column: u32) -> Vec<usize> {
+    fn get_neighbor_indexes(&self, row: u32, column: u32) -> Vec<usize> {
         let mut indexes = Vec::with_capacity(8);
         for delta_row in [self.height - 1, 0, 1].iter().cloned() {
             for delta_col in [self.width - 1, 0, 1].iter().cloned() {
@@ -113,9 +113,8 @@ impl Graph {
                 let neighbor_row = (row + delta_row) % self.height;
                 let neighbor_col = (column + delta_col) % self.width;
                 let idx = self.get_index(neighbor_row, neighbor_col);
-                if self.nodes[idx].node_type() == Type::Available {
-                    indexes.push(idx);
-                }
+
+                indexes.push(idx);
             }
         }
         indexes
@@ -123,7 +122,6 @@ impl Graph {
 
     pub fn set_start_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
-        alert(&format!("Start node index: {}", idx));
         self.start_node_index = Some(idx);
         self.nodes[idx].set_node_type(Type::Start);
         self.queue.push_back(idx)
@@ -132,8 +130,7 @@ impl Graph {
     pub fn set_end_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
 
-        alert(&format!("End node index: {}", idx));
-        self.end_node_indexd = Some(idx);
+        self.end_node_index = Some(idx);
         self.nodes[idx].set_node_type(Type::End);
     }
 
@@ -149,26 +146,23 @@ impl Graph {
 
         let current_node_index = self.queue.pop_front().unwrap();
 
-        log(&format!("Current node index: {}", current_node_index));
-
-        if self.nodes[current_node_index].node_type() == Type::End {
-            alert("Found the end node");
-            self.queue.clear();
-            return;
-        }
-
         let (row, column) = (
             current_node_index as u32 / self.width,
             current_node_index as u32 % self.width,
         );
 
-        let neighbors = self.get_available_neighbor_indexes(row, column);
+        let neighbors = self.get_neighbor_indexes(row, column);
 
         for neighbor in neighbors {
             if self.nodes[neighbor].is_visited() {
                 continue;
             }
             self.nodes[neighbor].set_visited();
+
+            if self.nodes[neighbor].node_type() == Type::End {
+                alert("End node found");
+                return;
+            }
 
             if self.nodes[neighbor].node_type() == Type::Wall {
                 continue;
@@ -252,20 +246,20 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
         .dyn_into::<web_sys::CanvasRenderingContext2d>()
         .unwrap();
 
-    let mut graph = Graph::new(width, height);
+    let mut graph = Graph::new(width / NODE_SIZE as u32 - 1, height / NODE_SIZE as u32 - 1);
 
     graph.set_start_node(15, 20);
     graph.set_end_node(10, 20);
-    // graph.set_wall_node(13, 15);
-    // graph.set_wall_node(13, 16);
-    // graph.set_wall_node(13, 17);
-    // graph.set_wall_node(13, 18);
-    // graph.set_wall_node(13, 19);
-    // graph.set_wall_node(13, 20);
-    // graph.set_wall_node(13, 21);
-    // graph.set_wall_node(13, 22);
-    // graph.set_wall_node(13, 23);
-    // graph.set_wall_node(13, 24);
+    graph.set_wall_node(13, 15);
+    graph.set_wall_node(13, 16);
+    graph.set_wall_node(13, 17);
+    graph.set_wall_node(13, 18);
+    graph.set_wall_node(13, 19);
+    graph.set_wall_node(13, 20);
+    graph.set_wall_node(13, 21);
+    graph.set_wall_node(13, 22);
+    graph.set_wall_node(13, 23);
+    graph.set_wall_node(13, 24);
 
     graph.draw_grid(&ctx);
     graph.draw_node(&ctx);
