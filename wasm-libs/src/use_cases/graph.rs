@@ -12,6 +12,15 @@ const WALL_COLOR: &str = "#000000";
 const START_COLOR: &str = "#00FF00";
 const END_COLOR: &str = "#0000FF";
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+
+    fn alert(s: &str);
+
+}
+
 #[repr(u8)]
 #[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum Type {
@@ -114,6 +123,7 @@ impl Graph {
 
     pub fn set_start_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
+        alert(&format!("Start node index: {}", idx));
         self.start_node_index = Some(idx);
         self.nodes[idx].set_node_type(Type::Start);
         self.queue.push_back(idx)
@@ -121,6 +131,8 @@ impl Graph {
 
     pub fn set_end_node(&mut self, row: u32, column: u32) {
         let idx = self.get_index(row, column);
+
+        alert(&format!("End node index: {}", idx));
         self.end_node_indexd = Some(idx);
         self.nodes[idx].set_node_type(Type::End);
     }
@@ -135,15 +147,20 @@ impl Graph {
             return;
         }
 
-        let current = self.queue.pop_front().unwrap();
+        let current_node_index = self.queue.pop_front().unwrap();
 
-        let node = &self.nodes[current];
+        log(&format!("Current node index: {}", current_node_index));
 
-        if node.node_type() == Type::End {
+        if self.nodes[current_node_index].node_type() == Type::End {
+            alert("Found the end node");
+            self.queue.clear();
             return;
         }
 
-        let (row, column) = (current as u32 / self.width, current as u32 % self.width);
+        let (row, column) = (
+            current_node_index as u32 / self.width,
+            current_node_index as u32 % self.width,
+        );
 
         let neighbors = self.get_available_neighbor_indexes(row, column);
 
@@ -157,7 +174,10 @@ impl Graph {
                 continue;
             }
 
-            self.nodes[neighbor].set_node_type(Type::Path);
+            if self.nodes[neighbor].node_type() == Type::Available {
+                self.nodes[neighbor].set_node_type(Type::Path);
+            }
+
             self.queue.push_back(neighbor);
         }
     }
@@ -234,14 +254,18 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
 
     let mut graph = Graph::new(width, height);
 
-    graph.set_start_node(0, 0);
-    graph.set_end_node(20, 20);
-    graph.set_wall_node(5, 10);
-    graph.set_wall_node(5, 11);
-    graph.set_wall_node(5, 12);
-    graph.set_wall_node(5, 13);
-    graph.set_wall_node(5, 14);
-    graph.set_wall_node(5, 15);
+    graph.set_start_node(15, 20);
+    graph.set_end_node(10, 20);
+    // graph.set_wall_node(13, 15);
+    // graph.set_wall_node(13, 16);
+    // graph.set_wall_node(13, 17);
+    // graph.set_wall_node(13, 18);
+    // graph.set_wall_node(13, 19);
+    // graph.set_wall_node(13, 20);
+    // graph.set_wall_node(13, 21);
+    // graph.set_wall_node(13, 22);
+    // graph.set_wall_node(13, 23);
+    // graph.set_wall_node(13, 24);
 
     graph.draw_grid(&ctx);
     graph.draw_node(&ctx);
