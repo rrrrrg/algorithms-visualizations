@@ -110,8 +110,10 @@ impl Graph {
                 if delta_row == 0 && delta_col == 0 {
                     continue;
                 }
+
                 let neighbor_row = (row + delta_row) % self.height;
                 let neighbor_col = (column + delta_col) % self.width;
+
                 let idx = self.get_index(neighbor_row, neighbor_col);
 
                 indexes.push(idx);
@@ -143,13 +145,21 @@ impl Graph {
         if self.queue.is_empty() {
             return;
         }
-
         let current_node_index = self.queue.pop_front().unwrap();
 
         let (row, column) = (
             current_node_index as u32 / self.width,
             current_node_index as u32 % self.width,
         );
+
+        if self.nodes[current_node_index].node_type() == Type::End {
+            alert("End node found");
+            return;
+        }
+
+        if self.nodes[current_node_index].node_type() == Type::Available {
+            self.nodes[current_node_index].set_node_type(Type::Path);
+        }
 
         let neighbors = self.get_neighbor_indexes(row, column);
 
@@ -159,17 +169,8 @@ impl Graph {
             }
             self.nodes[neighbor].set_visited();
 
-            if self.nodes[neighbor].node_type() == Type::End {
-                alert("End node found");
-                return;
-            }
-
             if self.nodes[neighbor].node_type() == Type::Wall {
                 continue;
-            }
-
-            if self.nodes[neighbor].node_type() == Type::Available {
-                self.nodes[neighbor].set_node_type(Type::Path);
             }
 
             self.queue.push_back(neighbor);
@@ -250,6 +251,14 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
 
     graph.set_start_node(15, 20);
     graph.set_end_node(10, 20);
+    graph.set_wall_node(13, 7);
+    graph.set_wall_node(13, 8);
+    graph.set_wall_node(13, 9);
+    graph.set_wall_node(13, 10);
+    graph.set_wall_node(13, 11);
+    graph.set_wall_node(13, 12);
+    graph.set_wall_node(13, 13);
+    graph.set_wall_node(13, 14);
     graph.set_wall_node(13, 15);
     graph.set_wall_node(13, 16);
     graph.set_wall_node(13, 17);
@@ -260,6 +269,15 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
     graph.set_wall_node(13, 22);
     graph.set_wall_node(13, 23);
     graph.set_wall_node(13, 24);
+    graph.set_wall_node(13, 25);
+    graph.set_wall_node(13, 26);
+    graph.set_wall_node(13, 27);
+    graph.set_wall_node(13, 28);
+    graph.set_wall_node(13, 29);
+    graph.set_wall_node(13, 30);
+    graph.set_wall_node(13, 31);
+    graph.set_wall_node(13, 32);
+    graph.set_wall_node(13, 33);
 
     graph.draw_grid(&ctx);
     graph.draw_node(&ctx);
