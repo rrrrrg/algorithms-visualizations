@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import init, { run_graph } from 'wasm-libs';
+import init, { run_bfs } from 'wasm-libs';
 
 interface Props {
   width: number;
@@ -15,7 +15,7 @@ const GraphCanvas: React.FunctionComponent<Props> = (props) => {
         return;
       }
 
-      run_graph('graph-canvas', props.width, props.height);
+      run_bfs('bfs-canvas', props.width, props.height);
     });
 
     return () => {
@@ -23,7 +23,7 @@ const GraphCanvas: React.FunctionComponent<Props> = (props) => {
     };
   }, [props.height, props.width]);
 
-  return <canvas id="graph-canvas" width={props.width} height={props.height} />;
+  return <canvas id='bfs-canvas' width={props.width} height={props.height} />;
 };
 
 export default GraphCanvas;
