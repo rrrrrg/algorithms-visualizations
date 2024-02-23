@@ -179,7 +179,6 @@ impl Graph {
 
         for neighbor in neighbors {
             if self.nodes[neighbor].is_visited() {
-                self.nodes[neighbor].weight = self.nodes[current_node_index].weight + 1;
                 continue;
             }
             self.nodes[neighbor].set_visited();
@@ -187,7 +186,10 @@ impl Graph {
             if self.nodes[neighbor].node_type() == Type::Wall {
                 continue;
             }
+           
             self.nodes[neighbor].weight = self.nodes[current_node_index].weight + 1;
+            
+
             self.queue.push_back(neighbor);
         }
     }
@@ -312,6 +314,13 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
     graph.set_wall_node(13, 11);
     graph.set_wall_node(13, 12);
     graph.set_wall_node(13, 13);
+    graph.set_wall_node(13, 13);
+    graph.set_wall_node(14, 13);
+    graph.set_wall_node(15, 13);
+    graph.set_wall_node(16, 13);
+    graph.set_wall_node(17, 13);
+    graph.set_wall_node(18, 13);
+    graph.set_wall_node(19, 13);
     graph.set_wall_node(13, 14);
     graph.set_wall_node(13, 15);
     graph.set_wall_node(13, 16);
@@ -324,6 +333,14 @@ pub fn run_graph(document_id: &str, width: u32, height: u32) {
     graph.set_wall_node(13, 23);
     graph.set_wall_node(13, 24);
     graph.set_wall_node(13, 25);
+    graph.set_wall_node(12, 25);
+    graph.set_wall_node(11, 25);
+    graph.set_wall_node(10, 25);
+    graph.set_wall_node(9, 25);
+    graph.set_wall_node(8, 25);
+    graph.set_wall_node(7, 25);
+    graph.set_wall_node(6, 25);
+    graph.set_wall_node(5, 25);
     graph.set_wall_node(13, 26);
     graph.set_wall_node(13, 27);
     graph.set_wall_node(13, 28);
