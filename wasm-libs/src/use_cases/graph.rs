@@ -5,6 +5,7 @@ use wasm_bindgen::prelude::*;
 use crate::canvas::{self, request_animation_frame};
 
 const NODE_SIZE: f64 = 20.0;
+const VISITED: &str = "#FF0000";
 const GRID_COLOR: &str = "#CCCCCC";
 const PATH_COLOR: &str = "#7BD3EA";
 const AVAILABLE_COLOR: &str = "#FFFFFF";
@@ -28,20 +29,23 @@ pub enum Type {
     End,
     Wall,
     Path,
+    Visited,
     Available,
 }
 
 #[derive(Clone, Debug)]
 pub struct Node {
+    pub weight: u32,
     node_type: Type,
     is_visited: bool,
 }
 
 impl Node {
-    pub fn new(node_type: Type) -> Node {
+    pub fn new() -> Node {
         Node {
-            node_type,
+            node_type: Type::Available,
             is_visited: false,
+            weight: 0,
         }
     }
 
@@ -69,13 +73,12 @@ pub struct Graph {
     start_node_index: Option<usize>,
     end_node_index: Option<usize>,
     queue: VecDeque<usize>,
+    is_backtracking: bool,
 }
 
 impl Graph {
     pub fn new(width: u32, height: u32) -> Graph {
-        let nodes = (0..width * height)
-            .map(|_| Node::new(Type::Available))
-            .collect();
+        let nodes = (0..width * height).map(|_| Node::new()).collect();
 
         Graph {
             width,
@@ -84,6 +87,7 @@ impl Graph {
             start_node_index: None,
             end_node_index: None,
             queue: VecDeque::new(),
+            is_backtracking: false,
         }
     }
 
@@ -142,6 +146,10 @@ impl Graph {
     }
 
     pub fn bfs(&mut self) {
+        if self.is_backtracking {
+            self.backtracking();
+            return;
+        }
         if self.queue.is_empty() {
             return;
         }
@@ -154,17 +162,24 @@ impl Graph {
 
         if self.nodes[current_node_index].node_type() == Type::End {
             alert("End node found");
+
+            self.queue.clear();
+
+            self.queue.push_back(current_node_index);
+
+            self.is_backtracking = true;
             return;
         }
 
         if self.nodes[current_node_index].node_type() == Type::Available {
-            self.nodes[current_node_index].set_node_type(Type::Path);
+            self.nodes[current_node_index].set_node_type(Type::Visited);
         }
 
         let neighbors = self.get_neighbor_indexes(row, column);
 
         for neighbor in neighbors {
             if self.nodes[neighbor].is_visited() {
+                self.nodes[neighbor].weight = self.nodes[current_node_index].weight + 1;
                 continue;
             }
             self.nodes[neighbor].set_visited();
@@ -172,9 +187,46 @@ impl Graph {
             if self.nodes[neighbor].node_type() == Type::Wall {
                 continue;
             }
-
+            self.nodes[neighbor].weight = self.nodes[current_node_index].weight + 1;
             self.queue.push_back(neighbor);
         }
+    }
+
+    fn backtracking(&mut self) {
+        if self.queue.is_empty() {
+            return;
+        }
+
+        let current_node_index = self.queue.pop_front().unwrap();
+
+        let (row, column) = (
+            current_node_index as u32 / self.width,
+            current_node_index as u32 % self.width,
+        );
+
+        let neighbors = self.get_neighbor_indexes(row, column);
+
+        let mut visited_neighbors: Vec<usize> = vec![];
+
+        for neighbor in neighbors {
+            if self.nodes[neighbor].node_type() == Type::Start {
+                alert("Start node found");
+                self.queue.clear();
+                return;
+            }
+
+            if self.nodes[neighbor].node_type() == Type::Visited {
+                visited_neighbors.push(neighbor);
+            }
+        }
+
+        let lowest_weight_index = visited_neighbors
+            .iter()
+            .min_by_key(|&&idx| self.nodes[idx].weight)
+            .unwrap();
+
+        self.nodes[*lowest_weight_index].set_node_type(Type::Path);
+        self.queue.push_back(*lowest_weight_index);
     }
 
     pub fn draw_grid(&self, ctx: &web_sys::CanvasRenderingContext2d) {
@@ -226,6 +278,8 @@ impl Graph {
                     ctx.set_fill_style(&END_COLOR.into());
                 } else if nodes[index as usize].node_type() == Type::Wall {
                     ctx.set_fill_style(&WALL_COLOR.into());
+                } else if nodes[index as usize].node_type() == Type::Visited {
+                    ctx.set_fill_style(&VISITED.into());
                 }
 
                 ctx.fill_rect(x, y, NODE_SIZE, NODE_SIZE);
