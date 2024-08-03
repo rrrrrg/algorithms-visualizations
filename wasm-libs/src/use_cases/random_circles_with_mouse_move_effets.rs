@@ -120,8 +120,8 @@ pub fn run_random_circles_with_mouse_move_effets(
     let mut particles: Vec<Circle> = vec![];
 
     *g.borrow_mut() = Some(Closure::new(move || {
-        ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
-        // ctx.set_fill_style(&JsValue::from_str("white"));
+        // ctx.set_fill_style(&JsValue::from_str("rgba(0, 0, 0, 0.1)"));
+        ctx.set_fill_style(&JsValue::from_str("white"));
         ctx.fill_rect(0.0, 0.0, boundary.width, boundary.height);
 
         for circle in circles.iter_mut() {
